@@ -36,10 +36,11 @@ class infrasound_location:
         self.AGC_PARAMS = config.AGC_PARAMS
         self.TIME_METHOD = config.TIME_METHOD
         self.STACK_METHOD = config.STACK_METHOD
-        end = UTCDateTime.now()
-        end_minute = end.minute - (end.minute % 10)
+        endtime = UTCDateTime.now()
+        end_minute = endtime.minute - (endtime.minute % 10)
 
-        self.ENDTIME = end or end.replace(minute = end_minute, second = 0, microsecond = 0)
+        self.ENDTIME = end or endtime.replace(minute = end_minute, second = 0, microsecond = 0)
+        print("End time set to:", self.ENDTIME)
         self.STARTTIME = start or self.ENDTIME - 10 * 60  # 10 minutes
 
     def gen_volc_image(self, volc_name, volc_info):
@@ -62,8 +63,6 @@ class infrasound_location:
         STATION = volc_info['station']
         LOCATION = volc_info['location']
         CHANNEL = volc_info['channel']
-
-        # MAX_STATION_DIST = volc_info['max_station_dist']  # [km] Max. dist. from grid center to station (approx.)
 
         FREQ_MIN = volc_info['freq_min']  # [Hz] Lower bandpass corner
         FREQ_MAX = volc_info['freq_max']   # [Hz] Upper bandpass corner
