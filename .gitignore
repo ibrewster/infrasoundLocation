@@ -1,0 +1,8 @@
+*.wpr
+*.wpu
+config.py
+bin
+include
+share
+lib
+pyvenv.cfg

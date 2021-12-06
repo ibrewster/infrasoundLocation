@@ -1,0 +1,6 @@
+[submodule "rtm"]
+	path = rtm
+	url = https://github.com/uafgeotools/rtm.git
+[submodule "waveform_collection"]
+	path = waveform_collection
+	url = https://github.com/uafgeotools/waveform_collection.git

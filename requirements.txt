@@ -1,0 +1,5 @@
+obspy
+xarray
+cartopy
+gdal
+utm
