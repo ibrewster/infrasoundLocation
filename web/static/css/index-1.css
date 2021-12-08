@@ -1,0 +1,52 @@
+.tabs{
+    border-bottom: 1px solid #CFCFCF;
+    box-sizing: border-box;
+    position:relative;
+    padding-left:2px;
+    height:2.5em;
+    line-height:2.5em;
+}
+
+.tabs button{
+    box-shadow: 4px 2px 2px -2px rgba(0,0,0,.3);
+    border:1px solid #CFCFCF;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    background-color:whitesmoke;
+    margin:0px;
+    position:relative;
+    vertical-align: bottom;
+}
+
+.tabs button:hover{
+    cursor:pointer;
+}
+
+.tabs button.current{
+    border-bottom:1px solid white;
+    background-color: white;
+    box-shadow: 6px 2px 2px -3px rgba(0,0,0,.3);
+    padding-bottom:5px;
+}
+
+div.volcTab{
+    display:inline-grid;
+    grid-template-columns: auto auto auto;
+    justify-items: center;
+    text-align: left;
+}
+
+div.infrasoundImages{
+    display:flex;
+}
+
+div.imageGroup{
+    display:flex;
+    flex-direction: column;
+    width:700px;
+    box-sizing: border-box;
+}
+
+div.volcWrapper{
+    text-align: center;
+}

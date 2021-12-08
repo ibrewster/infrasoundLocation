@@ -3,3 +3,5 @@ xarray
 cartopy
 gdal
 utm
+flask
+uwsgi

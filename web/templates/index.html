@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="static/css/index-1.css" />
+
+    <script type="text/javascript" src="static/scripts/jquery-3.6.0.min.js" defer></script>
+    <script type="text/javascript" src="static/scripts/index-1.js" defer></script>
+</head>
+<body>
+    <div id="volcs" class="tabs">
+        {% for volc in volcs %}<button data-volc="{{volc}}">{{volc|capitalize}}</button>{%endfor%}
+    </div>
+    <div class=content>
+        {% for volc in volcs %}
+        <div class="volcWrapper tabDiv" id="{{volc}}Tab" style="display:none;">
+            <div class="volcTab">
+                <div class="nav prev">
+                    <button class="navButton">&#9664;</button>
+                </div>
+                <div class="infrasoundImages">
+                    No Images Found
+                </div>
+                <div class="nav next">
+                    <button class="navButton">&#9654;</button>
+                </div>
+            </div>
+        </div>
+        
+        {% endfor %}
+    </div>
+
+</body>
+</html>

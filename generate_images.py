@@ -15,7 +15,7 @@ from rtm import (
 
 from waveform_collection import gather_waveforms
 
-import config
+from web import config
 
 """
 To obtain the below file from OpenTopography, run the command
