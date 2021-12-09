@@ -66,11 +66,13 @@ function getImages(stop_time){
         $(`#${volc}Tab div.nav.next button`).data('target',data['next']);
         if(data['next']===null){
             $(`#${volc}Tab div.nav.next button`).attr('disabled',true);
+            $('button.volcCurrent').attr('disabled',true);
         }
         else{
             $(`#${volc}Tab div.nav.next button`).attr('disabled',false);
+            $('button.volcCurrent').attr('disabled',false);
         }
-        
+
         displayImages(data['files'],volc);
     })
 }
