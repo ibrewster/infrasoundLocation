@@ -4,6 +4,7 @@ $(document).ready(function(){
     $('#volcs button').click(displayVolc);
     $('#volcs button:first').click();
     $('button.navButton').click(navImages);
+    $('button.volcCurrent').click(getImages);
 
     $(window).resize(function(){
         const count=getImageCount();
@@ -62,7 +63,14 @@ function getImages(stop_time){
     })
     .done(function(data){
         $(`#${volc}Tab div.nav.prev button`).data('target',data['newest']);
-        $(`#${volc}Tab div.nav.next button`).data('next',data['next']);
+        $(`#${volc}Tab div.nav.next button`).data('target',data['next']);
+        if(data['next']===null){
+            $(`#${volc}Tab div.nav.next button`).attr('disabled',true);
+        }
+        else{
+            $(`#${volc}Tab div.nav.next button`).attr('disabled',false);
+        }
+        
         displayImages(data['files'],volc);
     })
 }
@@ -95,5 +103,8 @@ function createImageDiv(images){
 
 function navImages(){
     const target=$(this).data('target');
-    getImages(target);
+    if (target>0)
+        getImages(target);
+    else
+        getImages();
 }

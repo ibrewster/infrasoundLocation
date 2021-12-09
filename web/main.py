@@ -2,6 +2,8 @@ import flask
 import glob
 import os
 
+from collections import deque
+
 from . import app, config
 
 
@@ -19,44 +21,53 @@ def get_images():
 
 
 def list_images(volcano, count, stop_time = None):
+    # stop_time is exclusive, any files equal to said stop time will not be included.
     img_dir = config.IMG_DIR
     image_wildcard = os.path.join(img_dir, f'{volcano.lower()}*')
     listing = list(filter(os.path.isfile, glob.glob(image_wildcard)))
-    listing.sort(key = os.path.getctime, reverse = True)
+    listing = [(x, os.path.getmtime(x)) for x in listing]
+    listing.sort(key = lambda x: x[1], reverse = True)
 
     file_groups = []
     # Group files by creation time. Since time may vary some, we need a "slush" amount
     ctime_slush = 120  # in seconds, two minutes
-    prev_ctime = stop_time or 0
+    prev_mtime = 0
     newest_ctime = None
-    next_ctime = None
     cur_group = []
+    m_times = deque(maxlen = 2)
+    next_mtime = None
     while len(file_groups) < count:
         try:
-            file = listing.pop(0)
+            file, file_mtime = listing.pop(0)
         except IndexError:
             if cur_group:
                 file_groups.append(cur_group)
             break  # No more files to be had
 
-        file_ctime = os.path.getctime(file)
+        new_group = abs(file_mtime - prev_mtime) > ctime_slush
+        if stop_time is not None and new_group:
+            m_times.append(prev_mtime)
+
+        prev_mtime = file_mtime
         if stop_time is not None:
             # Start counting files once they are *older* than the stop_time
-            if file_ctime > stop_time - ctime_slush:
-                next_ctime = file_ctime + + (2 * ctime_slush)
+            # That is, do nothing (continue) as long as the file is as new
+            # as or newer than the stop time.
+            if file_mtime > stop_time - ctime_slush:
                 continue
 
-        if abs(file_ctime - prev_ctime) > ctime_slush:
+        if new_group:
             if cur_group:
                 file_groups.append(cur_group)
                 cur_group = []
 
         cur_group.append(os.path.basename(file))
-        prev_ctime = file_ctime
         if newest_ctime is None:
-            newest_ctime = file_ctime
+            newest_ctime = file_mtime
+            if m_times:
+                next_mtime = m_times.popleft()
 
-    return {"files": file_groups, "newest": newest_ctime, 'next': next_ctime}
+    return {"files": file_groups, "newest": newest_ctime, 'next': next_mtime}
 
 
 @app.route("/imageBrowse")
