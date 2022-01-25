@@ -1,9 +1,12 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+    <link type="text/css" rel="stylesheet" href="static/css/jquery.datetimepicker.min.css" />
     <link type="text/css" rel="stylesheet" href="static/css/index-1.css" />
 
+
     <script type="text/javascript" src="static/scripts/jquery-3.6.0.min.js" defer></script>
+    <script type="text/javascript" src="static/scripts/jquery.datetimepicker.full.min.js" defer></script>
     <script type="text/javascript" src="static/scripts/index-1.js" defer></script>
 </head>
 <body>
@@ -14,6 +17,7 @@
         {% for volc in volcs %}
         <div class="volcWrapper tabDiv" id="{{volc}}Tab" style="display:none;">
             <div class=volcTop>
+                GoTo: <input type="text" id="endDateTime" class="datetime">
                 <button class="volcCurrent">Current</button>
             </div>
             <div class="volcTab">

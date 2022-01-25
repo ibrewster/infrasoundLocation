@@ -3,6 +3,7 @@ import glob
 import os
 
 from collections import deque
+from datetime import datetime, timezone, timedelta
 
 from . import app, config
 
@@ -74,7 +75,13 @@ def list_images(volcano, count, stop_time = None):
 def browse_images():
     volcano = flask.request.args['volc']
     count = int(flask.request.args.get('count', 1))
-    stop = float(flask.request.args['stop'])
+    try:
+        stop = float(flask.request.args['stop'])
+    except ValueError:
+        stop = datetime.strptime(flask.request.args['stop'],
+                                 '%m/%d/%Y %H:%M').replace(tzinfo = timezone.utc)
+        stop += timedelta(minutes = 10)
+        stop = stop.timestamp()
 
     return flask.jsonify(list_images(volcano, count, stop))
 

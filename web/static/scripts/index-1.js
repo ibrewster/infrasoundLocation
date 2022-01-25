@@ -5,7 +5,17 @@ $(document).ready(function(){
     $('#volcs button:first').click();
     $('button.navButton').click(navImages);
     $('button.volcCurrent').click(getImages);
+    $('#endDateTime').datetimepicker({
+        format:'m/d/Y H:i',
+        mask:true,
+        closeOnWithoutClick:true,
+        closeOnDateSelect:false,
+        defaultSelect:false,
+        validateOnBlur:false,
+        onClose:closeDebounce
+    })
 
+  
     $(window).resize(function(){
         const count=getImageCount();
         if (count!==imageCount){
@@ -17,6 +27,31 @@ $(document).ready(function(){
         }
     })
 })
+
+endDateTimeVal="";
+function closeDebounce(){
+    setTimeout(targetDateChanged,100);
+}
+
+function targetDateChanged(){
+    // All this junk is to PROPERLY handle the 
+    // closing of the datetimepicker so we 
+    // don't wind up with infinite loops.
+    if( $('.xdsoft_datetimepicker').is(':visible')){
+        console.log("Skipping due to not closed")
+        return;
+    }
+    let val=$('#endDateTime').val();
+
+    // Don't do anything unless the value has actually changed.
+    if(val===endDateTimeVal || val=="__/__/____ __:__"){
+        console.log("Skipping due to no change");
+        return;
+    }
+    endDateTimeVal=val;
+    
+    getImages(val);
+}
 
 function displayVolc(){
     $('#volcs button').removeClass('current');
