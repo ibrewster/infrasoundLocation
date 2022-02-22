@@ -44,6 +44,11 @@ class infrasound_location:
         self.STARTTIME = start or self.ENDTIME - 10 * 60  # 10 minutes
 
     def gen_volc_image(self, volc_name, volc_info):
+        NETWORK = config.NETWORK
+        SOURCE = config.SOURCE
+        LOCATION = config.LOCATION
+        CHANNEL = config.CHANNEL
+
         LON_0 = volc_info['lon']  # [deg] Longitude of grid center
         LAT_0 = volc_info['lat']  # [deg] Latitude of grid center
         X_RADIUS = volc_info['x_radius']  # [m] E-W grid radius (half of grid "width")
@@ -58,21 +63,16 @@ class infrasound_location:
         # %% (2) Grab and process the data
 
         # Data collection parameters
-        SOURCE = volc_info['source']
-        NETWORK = volc_info['network']
         STATION = volc_info['station']
-        LOCATION = volc_info['location']
-        CHANNEL = volc_info['channel']
 
         FREQ_MIN = volc_info['freq_min']  # [Hz] Lower bandpass corner
         FREQ_MAX = volc_info['freq_max']   # [Hz] Upper bandpass corner
 
-        DECIMATION_RATE = volc_info['decimation_rate']  # [Hz] New sampling rate to use for decimation
+        DECIMATION_RATE = config.DECIMATION_RATE    # [Hz] New sampling rate to use for decimation
         SMOOTH_WIN = volc_info['smooth_win']        # [s] Smoothing window duration
 
         # Automatically determine appropriate time buffer in s
-        #time_buffer = calculate_time_buffer(network_grid, MAX_STATION_DIST)
-        time_buffer = 10
+        time_buffer = config.TIME_BUFFER
 
         st = gather_waveforms(source=SOURCE, network=NETWORK, station=STATION,
                               location=LOCATION, channel=CHANNEL, starttime=self.STARTTIME,
