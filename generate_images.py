@@ -1,8 +1,14 @@
 # %% (1) Define grid
 import os
 
+import numpy
+import psycopg
+import utm
+
+from datetime import timezone
+
 from obspy import UTCDateTime
-from rtm import (
+from rtm.rtm import (
     define_grid,
     produce_dem,
     process_waveforms,
@@ -96,6 +102,35 @@ class infrasound_location:
         S = grid_search(processed_st=st_proc, grid=network_grid, time_method=self.TIME_METHOD,
                         starttime=self.STARTTIME, endtime=self.ENDTIME,
                         stack_method=self.STACK_METHOD, **TIME_KWARGS)
+
+        # Normalize to number of stations
+        nsta = len(st)
+        S.data = S.data / nsta
+
+        # Find and save any detections
+        detections = S.data >= config.DETECT_THREASHOLD
+        det_values = S.data[detections]
+        if len(det_values) > 0:
+            det_volc = [volc_name] * len(det_values)
+            det_time_idx, det_x_idx, det_y_idx = detections.nonzero()
+            det_times = S.time[det_time_idx].data.astype('datetime64[s]').tolist()
+            for idx, item in enumerate(det_times):
+                det_times[idx] = item.replace(tzinfo = timezone.utc)
+            det_x = S.x[det_x_idx]
+            det_y = S.y[det_y_idx]
+
+            gc_x, gc_y, _, _ = utm.from_latlon(*reversed(S.grid_center))
+            # Distance to center in meters (a^2+b^2=c^2)
+            det_dist = numpy.sqrt(numpy.square(det_x - gc_x).data + numpy.square(det_y - gc_y).data)
+
+            db_data = list(zip(det_volc, det_values, det_times, det_dist))
+
+            with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
+                                 user = config.PG_USER) as db_conn:
+                curr = db_conn.cursor()
+                curr.executemany("INSERT INTO detections (volc,value,d_time,dist) VALUES (%s,%s,%s,%s)",
+                                 db_data)
+                db_conn.commit()
 
         # %% (4) Plot
         fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,

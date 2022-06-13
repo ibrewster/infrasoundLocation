@@ -13,6 +13,15 @@ LOCATION = '*'
 CHANNEL = 'BDF'
 DECIMATION_RATE = 20
 
+DETECT_THREASHOLD = .4
+
+##########
+# PostgreSQL DB for storing detections
+##########
+PG_SERVER = 'myserver.myhost.edu'
+PG_DB = 'MyDBName'
+PG_USER = 'MyUser'
+
 VOLCS = {
     "pavlof": {
         "lon": -161.893047,  # [deg] Longitude of grid center
