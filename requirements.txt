@@ -5,3 +5,4 @@ gdal
 utm
 flask
 uwsgi
+psycopg

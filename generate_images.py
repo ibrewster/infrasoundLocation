@@ -108,7 +108,7 @@ class infrasound_location:
         S.data = S.data / nsta
 
         # Find and save any detections
-        detections = S.data >= config.DETECT_THREASHOLD
+        detections = S.data >= config.DETECT_THRESHOLD
         det_values = S.data[detections]
         if len(det_values) > 0:
             det_volc = [volc_name] * len(det_values)

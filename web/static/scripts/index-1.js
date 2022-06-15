@@ -5,7 +5,7 @@ $(document).ready(function(){
     $('#volcs button:first').click();
     $('button.navButton').click(navImages);
     $('button.volcCurrent').click(getImages);
-    $('#endDateTime').datetimepicker({
+    $('.datetime').datetimepicker({
         format:'m/d/Y H:i',
         mask:true,
         closeOnWithoutClick:true,
@@ -95,6 +95,7 @@ function getImages(stop_time){
     $.getJSON(url,args)
     .fail(function(){
         alert(`Unable to fetch images for ${volc}`);
+        $(`#${volc}Tab div.infrasoundImages`).empty().html("Unable to retrieve images")
     })
     .done(function(data){
         $(`#${volc}Tab div.nav.prev button`).data('target',data['newest']);
@@ -114,6 +115,11 @@ function getImages(stop_time){
 
 function displayImages(images,volc){
     const dest=$(`#${volc}Tab div.infrasoundImages`).empty();
+    if (images.length==0){
+        dest.html("No Images Found");
+        return;
+    }
+
     for(var i=images.length-1; i>=0; i--){
         //iterate backwards so oldest to newest
         const imageSet=images[i];
