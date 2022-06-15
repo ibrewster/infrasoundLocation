@@ -28,9 +28,12 @@ $(document).ready(function(){
     })
 })
 
-endDateTimeVal="";
+let endDateTimeVal="";
 function closeDebounce(){
-    setTimeout(targetDateChanged,100);
+    const target=this;
+    setTimeout(function(){
+        targetDateChanged.call(target);
+    }, 100);
 }
 
 function targetDateChanged(){
@@ -41,7 +44,7 @@ function targetDateChanged(){
         console.log("Skipping due to not closed")
         return;
     }
-    let val=$('#endDateTime').val();
+    let val=$('.datetime:visible').val();
 
     // Don't do anything unless the value has actually changed.
     if(val===endDateTimeVal || val=="__/__/____ __:__"){
@@ -62,6 +65,7 @@ function displayVolc(){
 
     $('div.tabDiv').hide();
     dest.show();
+    endDateTimeVal="";
 
     getImages();
 }
