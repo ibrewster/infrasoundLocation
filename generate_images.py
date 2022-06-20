@@ -86,7 +86,7 @@ class infrasound_location:
 
         st.remove_sensitivity()
 
-        # nsta = len(st)
+        nsta = len(st)
 
         st_proc = process_waveforms(st, freqmin=FREQ_MIN, freqmax=FREQ_MAX,
                                     envelope=True, smooth_win=SMOOTH_WIN,
@@ -104,7 +104,6 @@ class infrasound_location:
                         stack_method=self.STACK_METHOD, **TIME_KWARGS)
 
         # Normalize to number of stations
-        nsta = len(st)
         S.data = S.data / nsta
 
         # Find and save any detections
