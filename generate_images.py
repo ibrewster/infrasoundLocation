@@ -19,7 +19,10 @@ from rtm.rtm import (
     plot_st
 )
 
-from waveform_collection.waveform_collection import gather_waveforms
+try:
+    from waveform_collection.waveform_collection import gather_waveforms
+except ImportError:
+    from waveform_collection import gather_waveforms
 
 from web import config
 
