@@ -20,14 +20,30 @@ def get_images():
     count = int(flask.request.args.get('count', 1))
     return flask.jsonify(list_images(volcano, count))
 
+def get_img_list(base_dir, dir_date: datetime):
+    year = dir_date.strftime("%Y")
+    month = dir_date.strftime("%m")
+    day = dir_date.strftime("%d")
+    img_dir = os.path.join(base_dir, year, month, day)
 
-def list_images(volcano, count, stop_time = None):
-    # stop_time is exclusive, any files equal to said stop time will not be included.
-    img_dir = config.IMG_DIR
-    image_wildcard = os.path.join(img_dir, f'{volcano.lower()}*')
-    listing = list(filter(os.path.isfile, glob.glob(image_wildcard)))
-    listing = [(x, os.path.getmtime(x)) for x in listing]
+    try:
+        listing = [(x, os.path.getmtime(x)) for x in os.scandir(img_dir)]
+    except FileNotFoundError:
+        return []
+    
     listing.sort(key = lambda x: x[1], reverse = True)
+    return listing
+
+def list_images(volcano, count, stop_time: datetime = None):
+    # stop_time is exclusive, any files equal to said stop time will not be included.
+    if stop_time is None:
+        img_dir_time = datetime.utcnow() + timedelta(minutes = 10)
+    else:
+        img_dir_time = stop_time
+        stop_time = stop_time.timestamp()
+        
+
+    img_dir = os.path.join(config.IMG_DIR, volcano)
 
     file_groups = []
     # Group files by creation time. Since time may vary some, we need a "slush" amount
@@ -37,13 +53,23 @@ def list_images(volcano, count, stop_time = None):
     cur_group = []
     m_times = deque(maxlen = 2)
     next_mtime = None
+    
+    listing = get_img_list(img_dir, img_dir_time)
+    
     while len(file_groups) < count:
         try:
             file, file_mtime = listing.pop(0)
         except IndexError:
-            if cur_group:
-                file_groups.append(cur_group)
-            break  # No more files to be had
+            # Look at the previous day
+            img_dir_time -= timedelta(days = 1)
+            listing = get_img_list(img_dir, img_dir_time)
+            try:
+                file, file_mtime = listing.pop(0)
+            except IndexError:
+                # No previous day. Out of images.
+                if cur_group:
+                    file_groups.append(cur_group)
+                break  # No more files to be had
 
         new_group = abs(file_mtime - prev_mtime) > ctime_slush
         if stop_time is not None and new_group:
@@ -81,16 +107,15 @@ def browse_images():
         stop = datetime.strptime(flask.request.args['stop'],
                                  '%m/%d/%Y %H:%M').replace(tzinfo = timezone.utc)
         stop += timedelta(minutes = 10)
-        stop = stop.timestamp()
 
     return flask.jsonify(list_images(volcano, count, stop))
 
 
-@app.route('/getImage/<image>')
-def get_image(image):
+@app.route('/getImage/<volc>/<year>/<month>/<day>/<image>')
+def get_image(volc, year, month, day, image):
     # This should not be used in production. Rather, Nginx
     # or whatever server is being used should be configured
     # to serve up requests to this path as static files from
     # the image directory directly.
-    img_dir = config.IMG_DIR
-    return flask.send_from_directory(img_dir, image, filename = image)
+    img_dir = os.path.join(config.IMG_DIR, volc, year, month, day)
+    return flask.send_from_directory(img_dir, image)

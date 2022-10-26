@@ -138,11 +138,21 @@ function createImageDiv(images){
     const imageTypes=['slice','recsec','wfs'];
     for(const type of imageTypes ){
         //pull out the images in order
+        
         const img=images.find(function(imageName){
             return imageName.split('.')[0].endsWith(type);
         });
+        
+        img_parts=img.split("_");
+        img_volc=img_parts[0];
+        img_date=img_parts[1];
+        img_year=img_date.slice(0,4)
+        img_month=img_date.slice(4,6)
+        img_day=img_date.slice(6)
+        img_path=`${img_volc}/${img_year}/${img_month}/${img_day}/${img}`
+        
         let imgObj=$('<img class=ifsImage>');
-        imgObj.prop('src',`getImage/${img}`);
+        imgObj.prop('src',`getImage/${img_path}`);
         div.append(imgObj);
     }
     return div;

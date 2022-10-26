@@ -1,8 +1,11 @@
+scipy
 obspy
 xarray
 cartopy
 gdal
 utm
 flask
-uwsgi
 psycopg
+rasterio
+tqdm
+pygmt

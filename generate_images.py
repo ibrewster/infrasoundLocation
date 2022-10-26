@@ -19,7 +19,7 @@ from rtm.rtm import (
     plot_st
 )
 
-from waveform_collection import gather_waveforms
+from waveform_collection.waveform_collection import gather_waveforms
 
 from web import config
 
@@ -107,29 +107,28 @@ class infrasound_location:
         S.data = S.data / nsta
 
         # Find and save any detections
-        detections = S.data >= config.DETECT_THRESHOLD
-        det_values = S.data[detections]
+        peaks = get_peak_coordinates(S, global_max = False, height = config.DETECT_THRESHOLD,
+                                     min_time = 300)
+        det_times = [x.datetime.replace(tzinfo = timezone.utc) for x in peaks[0]]
+        det_x = numpy.asarray(peaks[2])
+        det_y = numpy.asarray(peaks[1])
+        det_values = peaks[4]['peak_heights']
+
         if len(det_values) > 0:
             det_volc = [volc_name] * len(det_values)
-            det_time_idx, det_x_idx, det_y_idx = detections.nonzero()
-            det_times = S.time[det_time_idx].data.astype('datetime64[s]').tolist()
-            for idx, item in enumerate(det_times):
-                det_times[idx] = item.replace(tzinfo = timezone.utc)
-            det_x = S.x[det_x_idx]
-            det_y = S.y[det_y_idx]
-
             gc_x, gc_y, _, _ = utm.from_latlon(*reversed(S.grid_center))
+            
             # Distance to center in meters (a^2+b^2=c^2)
-            det_dist = numpy.sqrt(numpy.square(det_x - gc_x).data + numpy.square(det_y - gc_y).data)
+            det_dist = numpy.sqrt(numpy.square(det_x - gc_x) + numpy.square(det_y - gc_y))
 
             db_data = list(zip(det_volc, det_values, det_times, det_dist))
 
-            with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
-                                 user = config.PG_USER) as db_conn:
-                curr = db_conn.cursor()
-                curr.executemany("INSERT INTO detections (volc,value,d_time,dist) VALUES (%s,%s,%s,%s)",
-                                 db_data)
-                db_conn.commit()
+            # with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
+                                 # user = config.PG_USER) as db_conn:
+                # curr = db_conn.cursor()
+                # curr.executemany("INSERT INTO detections (volc,value,d_time,dist) VALUES (%s,%s,%s,%s)",
+                                 # db_data)
+                # db_conn.commit()
 
         # %% (4) Plot
         fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,
@@ -148,16 +147,21 @@ class infrasound_location:
         fig_rec.axes[0].set_ylim(bottom=6)  # Start at this distance (km) from source
 
         if self.ISAVE:
-            os.makedirs(self.SVDIR, exist_ok = True)
+            img_time = st_proc[0].stats.starttime
+            tmstr = UTCDateTime.strftime(img_time, '%Y%m%d_%H%M')
+            year = UTCDateTime.strftime(img_time, '%Y')
+            month = UTCDateTime.strftime(img_time, '%m')
+            day = UTCDateTime.strftime(img_time, '%d')
+            img_dir = os.path.join(self.SVDIR, volc_name, year, month, day)
+            os.makedirs(img_dir, exist_ok = True)
             from matplotlib import rcParams
 
             rcParams.update({'font.size': 12})
 
-            tmstr = UTCDateTime.strftime(st_proc[0].stats.starttime, '%Y%m%d_%H%M')
 
-            wfs_file = os.path.join(self.SVDIR, f'{volc_name}_{tmstr}_wfs.png')
-            slice_file = os.path.join(self.SVDIR, f'{volc_name}_{tmstr}_slice.png')
-            recsec_file = os.path.join(self.SVDIR, f'{volc_name}_{tmstr}_recsec.png')
+            wfs_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_wfs.png')
+            slice_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_slice.png')
+            recsec_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_recsec.png')
 
             fig_st.savefig(wfs_file, dpi=200,
                            bbox_inches='tight', pad_inches=0.04)
