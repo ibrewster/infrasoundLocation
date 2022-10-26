@@ -103,6 +103,7 @@ def browse_images():
     count = int(flask.request.args.get('count', 1))
     try:
         stop = float(flask.request.args['stop'])
+        stop = datetime.utcfromtimestamp(stop)
     except ValueError:
         stop = datetime.strptime(flask.request.args['stop'],
                                  '%m/%d/%Y %H:%M').replace(tzinfo = timezone.utc)
