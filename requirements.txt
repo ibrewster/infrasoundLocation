@@ -1,6 +1,6 @@
 scipy
 obspy
-xarray
+rioxarray
 cartopy
 gdal
 utm

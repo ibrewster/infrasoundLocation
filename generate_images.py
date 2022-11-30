@@ -133,6 +133,10 @@ class infrasound_location:
 
         fig_slice = plot_time_slice(S, st_proc, label_stations=True, dem=network_dem,
                                     plot_peak=True, xy_grid=X_RADIUS_NET)
+        
+        ax = fig_slice.axes[0]
+        im = ax.get_images()
+        im[0].set_clim(.4, 1)
 
         PK_HT = config.PEAK_HEIGHT
         MIN_TIME = AGC_WIN
@@ -164,12 +168,12 @@ class infrasound_location:
             ##### DEBUG
             print("Saving detections to DB:", db_data)
 
-            # with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
-                                 # user = config.PG_USER) as db_conn:
-                # curr = db_conn.cursor()
-                # curr.executemany("INSERT INTO detections (volc,value,d_time,dist) VALUES (%s,%s,%s,%s)",
-                                 # db_data)
-                # db_conn.commit()
+            with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
+                                 user = config.PG_USER) as db_conn:
+                curr = db_conn.cursor()
+                curr.executemany("INSERT INTO detections (volc,value,d_time,dist) VALUES (%s,%s,%s,%s)",
+                                 db_data)
+                db_conn.commit()
         
 
         # fig_rec = plot_record_section(st_proc, origin_time=time_max,
