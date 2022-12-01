@@ -132,7 +132,8 @@ class infrasound_location:
                          remove_response=False, label_waveforms=True)
 
         fig_slice = plot_time_slice(S, st_proc, label_stations=True, dem=network_dem,
-                                    plot_peak=True, xy_grid=X_RADIUS_NET)
+                                    plot_peak=True, xy_grid=X_RADIUS_NET, cont_int = 50,
+                                    annot_int = 500)
         
         ax = fig_slice.axes[0]
         im = ax.get_images()
