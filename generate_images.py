@@ -125,7 +125,6 @@ class infrasound_location:
 
         # Normalize to number of stations
         S.data = S.data / nsta
-        
       
         # %% (4) Plot
         fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,
@@ -153,13 +152,14 @@ class infrasound_location:
         )
         
         det_times = [x.datetime.replace(tzinfo = timezone.utc) for x in time_max]
-        det_x = numpy.asarray(x_max)
-        det_y = numpy.asarray(y_max)
+        det_lon = numpy.asarray(x_max)
+        det_lat = numpy.asarray(y_max)
         det_values = props['peak_heights']
         
         if len(det_values) > 0:
             det_volc = [volc_name] * len(det_values)
             gc_x, gc_y, _, _ = utm.from_latlon(*reversed(S.grid_center))
+            det_x, det_y, _, _ = utm.from_latlon(det_lat, det_lon)
             
             # Distance to center in meters (a^2+b^2=c^2)
             det_dist = numpy.sqrt(numpy.square(det_x - gc_x) + numpy.square(det_y - gc_y))

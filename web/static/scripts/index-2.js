@@ -67,7 +67,53 @@ function displayVolc(){
     dest.show();
     endDateTimeVal="";
 
+    getDetections();
     getImages();
+}
+
+function getDetections(){
+    const volc=$('#volcs button.current').data('volc');
+    $.getJSON(`getDetections/${volc}`)
+    .done(function(data){
+        let times,values,dist;
+        [times,values,dist]=data;
+
+        const dest=$('div.volcDetections:visible')[0]
+        Plotly.newPlot(
+            dest,
+            [{
+                x:times,
+                y:values,
+                z:dist,
+                mode:"markers",
+                marker:{
+                    color:dist,
+                    colorscale:"RdBu",
+                    colorbar:{
+                        title:{
+                            side:"right",
+                            text:"Distance to Center (M)"
+                        }
+                    }
+                },
+            }],
+            {
+                margin: {
+                    t: 5,
+                    b:30,
+                    r:0
+                },
+                xaxis:{
+                    tickangle: 0,
+                },
+                yaxis:{
+                    range:[0,1.05],
+                    title:"Stack Amp"
+                }
+            },
+            {responsive: true}
+        )
+    })
 }
 
 function getImageCount(){

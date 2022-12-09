@@ -1,6 +1,7 @@
 import flask
-import glob
 import os
+
+import psycopg
 
 from collections import deque
 from datetime import datetime, timezone, timedelta
@@ -13,13 +14,32 @@ def index():
     volcs = list(config.VOLCS.keys())
     return flask.render_template("index.html", volcs = volcs)
 
-
+@app.route('/getDetections/<volcano>')
+def detections(volcano):
+    with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
+                         user = config.PG_USER, password = config.PG_PASS) as db_conn:
+        cur = db_conn.cursor()
+        cur.execute("SELECT TO_CHAR(d_time,'YYYY-MM-DD HH24:MI:SS'),value,dist FROM detections WHERE volc=%s", (volcano, ))
+        detections = cur.fetchall()
+    detections = tuple(zip(*detections))
+    return flask.jsonify(detections)
+    
 @app.route("/getImages")
 def get_images():
     volcano = flask.request.args['volc']
     count = int(flask.request.args.get('count', 1))
     return flask.jsonify(list_images(volcano, count))
 
+
+def parse_file_time(file):
+    parts = file.name.split("_")
+    file_date = parts[1]
+    file_time = parts[2]
+    
+    file_time = datetime.strptime(f"{file_date}T{file_time}",
+                                  "%Y%m%dT%H%M")
+    return file_time.timestamp()
+    
 def get_img_list(base_dir, dir_date: datetime):
     year = dir_date.strftime("%Y")
     month = dir_date.strftime("%m")
@@ -27,7 +47,7 @@ def get_img_list(base_dir, dir_date: datetime):
     img_dir = os.path.join(base_dir, year, month, day)
 
     try:
-        listing = [(x, os.path.getmtime(x)) for x in os.scandir(img_dir)]
+        listing = [(x, parse_file_time(x)) for x in os.scandir(img_dir)]
     except FileNotFoundError:
         return []
     
