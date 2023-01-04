@@ -17,7 +17,8 @@ def index():
 
 @app.route('/getDetections/<volcano>')
 def detections(volcano):
-    with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB) as db_conn:
+    with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
+                         user = config.PG_USER) as db_conn:
         cur = db_conn.cursor()
         cur.execute("SELECT TO_CHAR(d_time,'YYYY-MM-DD HH24:MI:SS'),value,dist FROM detections WHERE volc=%s", (volcano, ))
         detections = cur.fetchall()
