@@ -126,7 +126,7 @@ function getDetections(){
 
 function tsClicked(data){
     const pt=data.points[0];
-    $('#endDateTime').val(pt.x).change();
+    $('#endDateTime').val(pt.x).change().blur();
     console.log(pt);
 }
 
