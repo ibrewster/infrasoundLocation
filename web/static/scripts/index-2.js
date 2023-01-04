@@ -113,7 +113,7 @@ function getDetections(){
                     tickangle: 0,
                 },
                 yaxis:{
-                    range:[.6,1.05],
+                    range:[.75,1.075],
                     title:"Stack Amp"
                 }
             },
