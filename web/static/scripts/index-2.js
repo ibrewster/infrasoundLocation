@@ -76,7 +76,8 @@ function getDetections(){
     $.getJSON(`getDetections/${volc}`)
     .done(function(data){
         let times,values,dist;
-        [times,values,dist]=data;
+        [times,values,dist]=data['detections'];
+        color_max=data['max_dist']
 
         const dest=$('div.volcDetections:visible')[0]
         Plotly.newPlot(
@@ -88,7 +89,12 @@ function getDetections(){
                 mode:"markers",
                 marker:{
                     color:dist,
-                    colorscale:"RdBu",
+                    cmin:0,
+                    cmax:color_max,
+                    colorscale:[
+                        ['0','rgb(255,0,0)'],
+                        ['1.0','rgb(0,0,255)']
+                    ],
                     colorbar:{
                         title:{
                             side:"right",
@@ -113,7 +119,15 @@ function getDetections(){
             },
             {responsive: true}
         )
+
+        dest.on('plotly_click',tsClicked);
     })
+}
+
+function tsClicked(data){
+    const pt=data.points[0];
+    $('#endDateTime').val(pt.x).change();
+    console.log(pt);
 }
 
 function getImageCount(){

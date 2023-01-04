@@ -5,6 +5,7 @@ import psycopg
 
 from collections import deque
 from datetime import datetime, timezone, timedelta
+from dateutil.parser import parse
 
 from . import app, config
 
@@ -21,8 +22,12 @@ def detections(volcano):
         cur = db_conn.cursor()
         cur.execute("SELECT TO_CHAR(d_time,'YYYY-MM-DD HH24:MI:SS'),value,dist FROM detections WHERE volc=%s", (volcano, ))
         detections = cur.fetchall()
+        
+    max_dist = config.VOLCS[volcano]['x_radius_search']
     detections = tuple(zip(*detections))
-    return flask.jsonify(detections)
+    ret = {'max_dist': max_dist,
+           'detections': detections,}
+    return flask.jsonify(ret)
     
 @app.route("/getImages")
 def get_images():
@@ -125,8 +130,7 @@ def browse_images():
         stop = float(flask.request.args['stop'])
         stop = datetime.utcfromtimestamp(stop)
     except ValueError:
-        stop = datetime.strptime(flask.request.args['stop'],
-                                 '%m/%d/%Y %H:%M').replace(tzinfo = timezone.utc)
+        stop = parse(flask.request.args['stop']).replace(tzinfo = timezone.utc)
         stop += timedelta(minutes = 10)
 
     return flask.jsonify(list_images(volcano, count, stop))
