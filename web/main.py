@@ -18,7 +18,7 @@ def index():
 @app.route('/getDetections/<volcano>')
 def detections(volcano):
     with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
-                         user = config.PG_USER) as db_conn:
+                         user = config.PG_USER, password = config.PG_PASS) as db_conn:
         cur = db_conn.cursor()
         cur.execute("SELECT TO_CHAR(d_time,'YYYY-MM-DD HH24:MI:SS'),value,dist FROM detections WHERE volc=%s", (volcano, ))
         detections = cur.fetchall()
@@ -43,6 +43,7 @@ def parse_file_time(file):
     
     file_time = datetime.strptime(f"{file_date}T{file_time}",
                                   "%Y%m%dT%H%M")
+    file_time = file_time.replace(tzinfo = timezone.utc)
     return file_time.timestamp()
     
 def get_img_list(base_dir, dir_date: datetime):
@@ -128,7 +129,7 @@ def browse_images():
     count = int(flask.request.args.get('count', 1))
     try:
         stop = float(flask.request.args['stop'])
-        stop = datetime.utcfromtimestamp(stop)
+        stop = datetime.utcfromtimestamp(stop).replace(tzinfo = timezone.utc)
     except ValueError:
         stop = parse(flask.request.args['stop']).replace(tzinfo = timezone.utc)
         stop += timedelta(minutes = 10)
