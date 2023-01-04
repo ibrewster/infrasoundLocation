@@ -1,4 +1,5 @@
 import flask
+import math
 import os
 
 import psycopg
@@ -23,7 +24,9 @@ def detections(volcano):
         cur.execute("SELECT TO_CHAR(d_time,'YYYY-MM-DD HH24:MI:SS'),value,dist FROM detections WHERE volc=%s", (volcano, ))
         detections = cur.fetchall()
         
-    max_dist = config.VOLCS[volcano]['x_radius_search']
+    x_dist = config.VOLCS[volcano]['x_radius_search']
+    y_dist = config.VOLCS[volcano]['y_radius_search']
+    max_dist = math.sqrt(x_dist ** 2 + y_dist ** 2)
     detections = tuple(zip(*detections))
     ret = {'max_dist': max_dist,
            'detections': detections,}
