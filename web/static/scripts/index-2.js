@@ -164,7 +164,7 @@ function getImages(stop_time){
         $(`#${volc}Tab div.infrasoundImages`).empty().html("Unable to retrieve images")
     })
     .done(function(data){
-        $(`#${volc}Tab div.nav.prev button`).data('target',data['newest']);
+        $(`#${volc}Tab div.nav.prev button`).data('target',data['prev']);
         $(`#${volc}Tab div.nav.next button`).data('target',data['next']);
         if(data['next']===null){
             $(`#${volc}Tab div.nav.next button`).attr('disabled',true);

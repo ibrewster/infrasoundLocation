@@ -1,4 +1,5 @@
 import flask
+import glob
 import math
 import os
 
@@ -16,6 +17,7 @@ def index():
     volcs = list(config.VOLCS.keys())
     return flask.render_template("index.html", volcs = volcs)
 
+
 @app.route('/getDetections/<volcano>')
 def detections(volcano):
     with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
@@ -23,15 +25,16 @@ def detections(volcano):
         cur = db_conn.cursor()
         cur.execute("SELECT TO_CHAR(d_time AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'),value,dist FROM detections WHERE volc=%s", (volcano, ))
         detections = cur.fetchall()
-        
+
     x_dist = config.VOLCS[volcano]['x_radius_search']
     y_dist = config.VOLCS[volcano]['y_radius_search']
     max_dist = math.sqrt(x_dist ** 2 + y_dist ** 2)
     detections = tuple(zip(*detections))
     ret = {'max_dist': max_dist,
-           'detections': detections,}
+           'detections': detections, }
     return flask.jsonify(ret)
-    
+
+
 @app.route("/getImages")
 def get_images():
     volcano = flask.request.args['volc']
@@ -43,12 +46,28 @@ def parse_file_time(file):
     parts = file.name.split("_")
     file_date = parts[1]
     file_time = parts[2]
-    
+
     file_time = datetime.strptime(f"{file_date}T{file_time}",
                                   "%Y%m%dT%H%M")
     file_time = file_time.replace(tzinfo = timezone.utc)
     return file_time.timestamp()
-    
+
+
+def get_img_times(base_dir, dir_date: datetime):
+    year = dir_date.strftime("%Y")
+    month = dir_date.strftime("%m")
+    day = dir_date.strftime("%d")
+    img_dir = os.path.join(base_dir, year, month, day)
+
+    try:
+        listing = {parse_file_time(x) for x in os.scandir(img_dir)}
+    except FileNotFoundError:
+        return img_dir, []
+
+    listing = sorted(listing, reverse = True)
+    return (img_dir, listing)
+
+
 def get_img_list(base_dir, dir_date: datetime):
     year = dir_date.strftime("%Y")
     month = dir_date.strftime("%m")
@@ -59,71 +78,79 @@ def get_img_list(base_dir, dir_date: datetime):
         listing = [(x, parse_file_time(x)) for x in os.scandir(img_dir)]
     except FileNotFoundError:
         return []
-    
+
     listing.sort(key = lambda x: x[1], reverse = True)
     return listing
 
+
+def get_prev(img_dir, img_dir_time, listing):
+    try:
+        file_mtime = listing.pop(0)
+    except IndexError:
+        # Look at the previous day
+        img_dir_time -= timedelta(days = 1)
+        day_dir, listing = get_img_times(img_dir, img_dir_time)
+        try:
+            file_mtime = listing.pop(0)
+        except IndexError:
+            return None
+    return file_mtime
+
+
 def list_images(volcano, count, stop_time: datetime = None):
-    # stop_time is exclusive, any files equal to said stop time will not be included.
+    # stop_time is inclusive, any files equal to said stop time will be included.
     if stop_time is None:
         img_dir_time = datetime.utcnow() + timedelta(minutes = 10)
     else:
         img_dir_time = stop_time
         stop_time = stop_time.timestamp()
-        
 
     img_dir = os.path.join(config.IMG_DIR, volcano)
 
-    file_groups = []
-    # Group files by creation time. Since time may vary some, we need a "slush" amount
-    ctime_slush = 120  # in seconds, two minutes
-    prev_mtime = 0
-    newest_ctime = None
-    cur_group = []
-    m_times = deque(maxlen = 2)
-    next_mtime = None
-    
-    listing = get_img_list(img_dir, img_dir_time)
-    
-    while len(file_groups) < count:
-        try:
-            file, file_mtime = listing.pop(0)
-        except IndexError:
-            # Look at the previous day
-            img_dir_time -= timedelta(days = 1)
-            listing = get_img_list(img_dir, img_dir_time)
-            try:
-                file, file_mtime = listing.pop(0)
-            except IndexError:
-                # No previous day. Out of images.
-                if cur_group:
-                    file_groups.append(cur_group)
-                break  # No more files to be had
+    file_dates = []
+    if count > 1:
+        prev_time_opts = deque(maxlen = count - 1)
+    else:
+        prev_time_opts = None
 
-        new_group = abs(file_mtime - prev_mtime) > ctime_slush
-        if stop_time is not None and new_group:
-            m_times.append(prev_mtime)
+    next_time = None
+    prev_time = None
 
-        prev_mtime = file_mtime
+    day_dir, listing = get_img_times(img_dir, img_dir_time)
+
+    while len(file_dates) < count:
+        file_mtime = get_prev(img_dir, img_dir_time, listing)
+        if file_mtime is None:
+            # No previous day. Out of images.
+            break  # No more files to be had
+
         if stop_time is not None:
             # Start counting files once they are *older* than the stop_time
             # That is, do nothing (continue) as long as the file is as new
             # as or newer than the stop time.
-            if file_mtime > stop_time - ctime_slush:
+            if file_mtime > stop_time:
+                next_time = file_mtime
                 continue
 
-        if new_group:
-            if cur_group:
-                file_groups.append(cur_group)
-                cur_group = []
+        if prev_time_opts is not None:
+            prev_time_opts.appendleft(file_mtime)
 
-        cur_group.append(os.path.basename(file))
-        if newest_ctime is None:
-            newest_ctime = file_mtime
-            if m_times:
-                next_mtime = m_times.popleft()
+        # Get a listing of files for this time
+        time_obj = datetime.utcfromtimestamp(file_mtime).replace(tzinfo = timezone.utc)
+        time_str = time_obj.strftime('%Y%m%d_%H%M')
+        glob_pattern = f"{day_dir}/{volcano}_{time_str}_*.png"
+        file_group = [os.path.basename(x) for x in glob.glob(glob_pattern)]
+        file_dates.append(file_group)
 
-    return {"files": file_groups, "newest": newest_ctime, 'next': next_mtime}
+    if count == 1:
+        prev_time = get_prev(img_dir, img_dir_time, listing)
+    else:
+        try:
+            prev_time = prev_time_opts.pop()
+        except:
+            prev_time = None
+
+    return {"files": file_dates, "prev": prev_time, 'next': next_time}
 
 
 @app.route("/imageBrowse")
@@ -135,7 +162,6 @@ def browse_images():
         stop = datetime.utcfromtimestamp(stop).replace(tzinfo = timezone.utc)
     except ValueError:
         stop = parse(flask.request.args['stop']).replace(tzinfo = timezone.utc)
-        stop += timedelta(minutes = 10)
 
     return flask.jsonify(list_images(volcano, count, stop))
 
