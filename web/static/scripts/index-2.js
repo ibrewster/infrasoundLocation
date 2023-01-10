@@ -15,7 +15,7 @@ $(document).ready(function(){
         onClose:closeDebounce
     })
 
-  
+
     $(window).resize(function(){
         const count=getImageCount();
         if (count!==imageCount){
@@ -37,8 +37,8 @@ function closeDebounce(){
 }
 
 function targetDateChanged(){
-    // All this junk is to PROPERLY handle the 
-    // closing of the datetimepicker so we 
+    // All this junk is to PROPERLY handle the
+    // closing of the datetimepicker so we
     // don't wind up with infinite loops.
     if( $('.xdsoft_datetimepicker').is(':visible')){
         console.log("Skipping due to not closed")
@@ -52,7 +52,7 @@ function targetDateChanged(){
         return;
     }
     endDateTimeVal=val;
-    
+
     getImages(val);
 }
 
@@ -111,10 +111,12 @@ function getDetections(){
                 },
                 xaxis:{
                     tickangle: 0,
+                    gridcolor:"rgba(0,0,0,.25)"
                 },
                 yaxis:{
                     range:[.75,1.075],
-                    title:"Stack Amp"
+                    title:"Stack Amp",
+                    gridcolor:"rgba(0,0,0,.25)"
                 }
             },
             {responsive: true}
@@ -198,11 +200,11 @@ function createImageDiv(images){
     const imageTypes=['slice','wfs'];
     for(const type of imageTypes ){
         //pull out the images in order
-        
+
         const img=images.find(function(imageName){
             return imageName.split('.')[0].endsWith(type);
         });
-        
+
         img_parts=img.split("_");
         img_volc=img_parts[0];
         img_date=img_parts[1];
@@ -210,7 +212,7 @@ function createImageDiv(images){
         img_month=img_date.slice(4,6)
         img_day=img_date.slice(6)
         img_path=`${img_volc}/${img_year}/${img_month}/${img_day}/${img}`
-        
+
         let imgObj=$('<img class=ifsImage>');
         imgObj.prop('src',`getImage/${img_path}`);
         div.append(imgObj);
