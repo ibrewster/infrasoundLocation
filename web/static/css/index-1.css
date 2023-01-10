@@ -41,6 +41,7 @@ div.infrasoundImages{
 }
 
 div.imageGroup{
+    position:relative;
     display:flex;
     flex-direction: column;
     width:700px;
@@ -60,4 +61,14 @@ div.volcTop{
     padding-bottom: 10px;
     margin-bottom: 5px;
     border-bottom: 3px groove;
+}
+
+.imageGroup div.highlight{
+    position:absolute;
+    width:100%;
+    height:100%;
+    top:0px;
+    left:0px;
+    background-color:yellow;
+    opacity:.25;
 }

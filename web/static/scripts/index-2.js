@@ -36,6 +36,8 @@ function closeDebounce(){
     }, 100);
 }
 
+
+let highlightImage=false;
 function targetDateChanged(){
     // All this junk is to PROPERLY handle the
     // closing of the datetimepicker so we
@@ -53,6 +55,7 @@ function targetDateChanged(){
     }
     endDateTimeVal=val;
 
+    highlightImage=true;
     getImages(val);
 }
 
@@ -193,6 +196,14 @@ function displayImages(images,volc){
         dest.append(setDiv);
     }
 
+    if(highlightImage){
+        highlightImage=false;
+        $('div.infrasoundImages .imageGroup:last .highlight').show()
+        setTimeout(function(){
+            $('div.infrasoundImages .imageGroup:last .highlight').fadeOut(1000)
+        },2000);
+    }
+
 }
 
 function createImageDiv(images){
@@ -217,6 +228,7 @@ function createImageDiv(images){
         imgObj.prop('src',`getImage/${img_path}`);
         div.append(imgObj);
     }
+    div.append('<div class=highlight style="display:none">')
     return div;
 }
 
