@@ -208,13 +208,17 @@ function displayImages(images,volc){
 
 function createImageDiv(images){
     let div=$('<div class="imageGroup">')
-    const imageTypes=['slice','wfs'];
+    const imageTypes=['slice','wfs','combined'];
     for(const type of imageTypes ){
         //pull out the images in order
 
         const img=images.find(function(imageName){
             return imageName.split('.')[0].endsWith(type);
         });
+
+        if(typeof(img)=='undefined'){
+            continue;
+        }
 
         img_parts=img.split("_");
         img_volc=img_parts[0];
