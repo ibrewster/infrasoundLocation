@@ -5,8 +5,6 @@ import numpy
 import psycopg
 import utm
 
-import matplotlib.pyplot as plt
-
 from datetime import timezone
 
 from obspy import UTCDateTime
@@ -53,7 +51,7 @@ class infrasound_location:
         print("End time set to:", self.ENDTIME)
         self.STARTTIME = start or self.ENDTIME - 10 * 60  # 10 minutes
 
-    def gen_volc_image(self, volc_name, volc_info, SAVE_DB = True):
+    def gen_volc_image(self, volc_name, volc_info):
         NETWORK = config.NETWORK
         SOURCE = config.SOURCE
         LOCATION = config.LOCATION
@@ -66,20 +64,21 @@ class infrasound_location:
         SPACING_NET = volc_info['spacing_net']    # [m] Grid spacing
 
         network_grid = define_grid(lon_0=LON_0, lat_0=LAT_0, x_radius=X_RADIUS_NET,
-                                   y_radius=Y_RADIUS_NET, spacing=SPACING_NET, projected=True,
-                                   plot_preview=False)
+                   y_radius=Y_RADIUS_NET, spacing=SPACING_NET, projected=True,
+                   plot_preview=False)
 
         network_dem = produce_dem(network_grid, external_file=None, plot_output=False)
-
+        
         X_RADIUS_SEARCH = volc_info['x_radius_search']  # [m] E-W grid radius (half of grid "width")
         Y_RADIUS_SEARCH = volc_info['y_radius_search']  # [m] N-S grid radius (half of grid "height")
         SPACING_SEARCH = volc_info['spacing_search']    # [m] Grid spacing
-
+        
         search_grid = define_grid(lon_0=LON_0, lat_0=LAT_0, x_radius=X_RADIUS_SEARCH,
-                                  y_radius=Y_RADIUS_SEARCH, spacing=SPACING_SEARCH, projected=True,
-                                  plot_preview=False)
-
-        search_dem = produce_dem(search_grid, external_file=None, plot_output=False)
+                           y_radius=Y_RADIUS_SEARCH, spacing=SPACING_SEARCH, projected=True,
+                           plot_preview=False)
+        
+        search_dem = produce_dem(search_grid, external_file=None, plot_output=False)        
+        
 
         # %% (2) Grab and process the data
 
@@ -107,7 +106,7 @@ class infrasound_location:
         AGC_WIN = config.AGC_WIN
         #AGC_PARAMS = None
         AGC_PARAMS = dict(win_sec=AGC_WIN, method='walker')
-
+        
         st_proc = process_waveforms(st, freqmin=FREQ_MIN, freqmax=FREQ_MAX,
                                     envelope=True, smooth_win=SMOOTH_WIN,
                                     agc_params=AGC_PARAMS,
@@ -126,11 +125,23 @@ class infrasound_location:
 
         # Normalize to number of stations
         S.data = S.data / nsta
+      
+        # %% (4) Plot
+        fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,
+                         remove_response=False, label_waveforms=True)
+
+        fig_slice = plot_time_slice(S, st_proc, label_stations=True, dem=network_dem,
+                                    plot_peak=True, xy_grid=X_RADIUS_NET, cont_int = 50,
+                                    annot_int = 500)
+        
+        ax = fig_slice.axes[0]
+        im = ax.get_images()
+        im[0].set_clim(.4, 1)
 
         PK_HT = config.PEAK_HEIGHT
         MIN_TIME = AGC_WIN
         PROM = config.PROMINANCE
-
+        
         # Find and save any detections
         time_max, y_max, x_max, peaks, props = get_peak_coordinates(
             S, global_max=False,
@@ -139,22 +150,23 @@ class infrasound_location:
             prominence=PROM,
             unproject=True
         )
-
+        
         det_times = [x.datetime.replace(tzinfo = timezone.utc) for x in time_max]
         det_lon = numpy.asarray(x_max)
         det_lat = numpy.asarray(y_max)
         det_values = props['peak_heights']
-
-        if len(det_values) > 0 and SAVE_DB:
+        
+        if len(det_values) > 0:
             det_volc = [volc_name] * len(det_values)
             gc_x, gc_y, _, _ = utm.from_latlon(*reversed(S.grid_center))
             det_x, det_y, _, _ = utm.from_latlon(det_lat, det_lon)
-
+            
             # Distance to center in meters (a^2+b^2=c^2)
             det_dist = numpy.sqrt(numpy.square(det_x - gc_x) + numpy.square(det_y - gc_y))
 
             db_data = list(zip(det_volc, det_values, det_times, det_dist))
-
+            
+            ##### DEBUG
             print("Saving detections to DB:", db_data)
 
             with psycopg.connect(host = config.PG_SERVER, dbname = config.PG_DB,
@@ -163,20 +175,15 @@ class infrasound_location:
                 curr.executemany("INSERT INTO detections (volc,value,d_time,dist) VALUES (%s,%s,%s,%s)",
                                  db_data)
                 db_conn.commit()
+        
+
+        # fig_rec = plot_record_section(st_proc, origin_time=time_max,
+                                      # source_location=(y_max, x_max),
+                                      # plot_celerity=S.celerity, label_waveforms=True)
+
+        # fig_rec.axes[0].set_ylim(bottom=6)  # Start at this distance (km) from source
 
         if self.ISAVE:
-            # %% (4) Plot
-            fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,
-                             remove_response=False, label_waveforms=True)
-
-            fig_slice = plot_time_slice(S, st_proc, label_stations=True, dem=network_dem,
-                                        plot_peak=True, xy_grid=X_RADIUS_NET, cont_int = 50,
-                                        annot_int = 500)
-
-            ax = fig_slice.axes[0]
-            im = ax.get_images()
-            im[0].set_clim(.4, 1)
-
             img_time = st_proc[0].stats.starttime
             tmstr = UTCDateTime.strftime(img_time, '%Y%m%d_%H%M')
             year = UTCDateTime.strftime(img_time, '%Y')
@@ -188,34 +195,20 @@ class infrasound_location:
 
             rcParams.update({'font.size': 12})
 
-            combined_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_combined.png')
 
-            c1 = fig_slice.canvas
-            c2 = fig_st.canvas
+            wfs_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_wfs.png')
+            slice_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_slice.png')
+            # recsec_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_recsec.png')
 
-            c1.draw()
-            c2.draw()
+            fig_st.savefig(wfs_file, dpi=200,
+                           bbox_inches='tight', pad_inches=0.04)
 
-            a1 = numpy.array(c1.buffer_rgba())
-            a2 = numpy.array(c2.buffer_rgba())
+            # fig_slice.set_size_inches(5,5)
+            fig_slice.savefig(slice_file, dpi=200,
+                              bbox_inches='tight', pad_inches=0.04)
 
-            a = numpy.vstack((a1, a2))
-
-            dpi = 200
-            fig_c, ax_c = plt.subplots(figsize=(8, 18), dpi = dpi)
-            fig_c.subplots_adjust(0, 0, 1, 1)
-            ax_c.set_axis_off()
-            ax_c.matshow(a)
-
-            fig_c.savefig(combined_file)
-            # wfs_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_wfs.png')
-            # slice_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_slice.png')
-
-            # fig_st.savefig(wfs_file, dpi=200,
-            # bbox_inches='tight', pad_inches=0.04)
-
-            # fig_slice.savefig(slice_file, dpi=200,
-            # bbox_inches='tight', pad_inches=0.04)
+            # fig_rec.savefig(recsec_file, dpi=200,
+                            # bbox_inches='tight', pad_inches=0.1)
 
 
 if __name__ == "__main__":
