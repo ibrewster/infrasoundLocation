@@ -216,6 +216,10 @@ function createImageDiv(images){
             return imageName.split('.')[0].endsWith(type);
         });
 
+        if(typeof(img)=='undefined'){
+            continue;
+        }
+
         img_parts=img.split("_");
         img_volc=img_parts[0];
         img_date=img_parts[1];
