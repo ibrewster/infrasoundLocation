@@ -23,13 +23,12 @@ if __name__ == "__main__":
     missed = []
     futures = []
     # 2022-11-24T03:00:00.000000Z
-    START = UTCDateTime(2023, 1, 31, 17, 30, 0)
-    STOP = UTCDateTime(2023, 1, 31, 18, 40, 0)
+    START = UTCDateTime(2023, 1, 31, 3, 0, 0)
+    STOP = UTCDateTime(2023, 1, 31, 18, 30, 0)
     RUN_END = START
     with ProcessPoolExecutor(max_workers = 6) as executor:
         while RUN_END <= STOP:
-            #future = executor.submit(runDate, RUN_END)
-            runDate(RUN_END)
+            future = executor.submit(runDate, RUN_END)
             RUN_END = RUN_END + (10 * 60)
 
     for future in futures:
