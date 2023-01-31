@@ -202,12 +202,12 @@ class infrasound_location:
             a = numpy.vstack((a1, a2))
 
             dpi = 200
-            fig_c, ax_c = plt.subplots(figsize=(8, 18), dpi = dpi)
+            fig_c, ax_c = plt.subplots(figsize=(8.14, 18), dpi = dpi)
             fig_c.subplots_adjust(0, 0, 1, 1)
             ax_c.set_axis_off()
             ax_c.matshow(a)
 
-            fig_c.savefig(combined_file)
+            fig_c.savefig(combined_file, dpi = 200, pad_inches = 0.04, bbox_inches = "tight")
             # wfs_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_wfs.png')
             # slice_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_slice.png')
 
