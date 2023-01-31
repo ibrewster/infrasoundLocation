@@ -208,7 +208,7 @@ function displayImages(images,volc){
 
 function createImageDiv(images){
     let div=$('<div class="imageGroup">')
-    const imageTypes=['slice','wfs'];
+    const imageTypes=['slice','wfs','combined'];
     for(const type of imageTypes ){
         //pull out the images in order
 
