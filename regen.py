@@ -2,20 +2,41 @@ from generate_images import infrasound_location
 from obspy import UTCDateTime
 from web import config
 
+from concurrent.futures import ProcessPoolExecutor
+
+
+def runDate(RUN_END):
+    missed = []
+    generator = infrasound_location(RUN_END)
+    for volc_name, volc_info in config.VOLCS.items():
+        try:
+            generator.gen_volc_image(volc_name, volc_info, False)
+        except Exception as e:
+            print(e)
+            missed.append(RUN_END)
+            pass
+
+    return missed
+
+
 if __name__ == "__main__":
     missed = []
-    START = UTCDateTime(2023, 1, 31, 19, 00, 0)
-    STOP = UTCDateTime(2023, 1, 31, 19, 10, 0)
+    futures = []
+    # 2022-11-24T03:00:00.000000Z
+    START = UTCDateTime(2022, 12, 31, 23, 0, 0)
+    STOP = UTCDateTime(2023, 1, 1, 18, 30, 0)
     RUN_END = START
-    while RUN_END <= STOP:
-        generator = infrasound_location(RUN_END)
-        for volc_name, volc_info in config.VOLCS.items():
-            try:
-                generator.gen_volc_image(volc_name, volc_info)
-            except Exception as e:
-                print(e)
-                missed.append(RUN_END)
-                pass
-        RUN_END = RUN_END + (10 * 60)
+    with ProcessPoolExecutor(max_workers = 8) as executor:
+        while RUN_END <= STOP:
+            future = executor.submit(runDate, RUN_END)
+            #runDate(RUN_END)
+            RUN_END = RUN_END + (10 * 60)
+
+    for future in futures:
+        missed += future.result()
+
     print("****************RUN COMPLETE**************")
 #    print(missed)
+
+
+

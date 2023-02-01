@@ -53,19 +53,41 @@ def parse_file_time(file):
     return file_time.timestamp()
 
 
-def get_img_times(base_dir, dir_date: datetime):
-    year = dir_date.strftime("%Y")
-    month = dir_date.strftime("%m")
-    day = dir_date.strftime("%d")
+def decompose_date(date: datetime):
+    year = date.strftime("%Y")
+    month = date.strftime("%m")
+    day = date.strftime("%d")
+    return (year, month, day)
+
+def get_img_times_listing(base_dir, dir_date: datetime) -> set:
+    year,month,day = decompose_date(dir_date)
     img_dir = os.path.join(base_dir, year, month, day)
 
     try:
-        listing = {parse_file_time(x) for x in os.scandir(img_dir)}
+        # Get a listing for the current day
+        listing = {(img_dir, parse_file_time(x)) for x in os.scandir(img_dir)}
     except FileNotFoundError:
-        return img_dir, []
+        listing = set()
+        
+    return listing
+    
+def get_img_times(base_dir, dir_date: datetime):
+    listing = get_img_times_listing(base_dir, dir_date)
+        
+    # and *one* entry for the next day, so we don't get stuck
+    dir_date += timedelta(days = 1)
 
-    listing = sorted(listing, reverse = True)
-    return (img_dir, listing)
+    try:
+        listing2 = sorted(get_img_times_listing(base_dir, dir_date),
+                       key = lambda x: x[1])[0]
+    
+        listing.add(listing2)
+    except IndexError:
+        # No next day. No problem.
+        pass
+
+    listing = sorted(listing, key = lambda x: x[1], reverse = True)
+    return listing
 
 
 def get_img_list(base_dir, dir_date: datetime):
@@ -85,16 +107,19 @@ def get_img_list(base_dir, dir_date: datetime):
 
 def get_prev(img_dir, img_dir_time, listing):
     try:
-        file_mtime = listing.pop(0)
+        day_dir, file_mtime = listing.pop(0)
     except IndexError:
         # Look at the previous day
         img_dir_time -= timedelta(days = 1)
-        day_dir, listing = get_img_times(img_dir, img_dir_time)
+        listing = get_img_times(img_dir, img_dir_time)
         try:
-            file_mtime = listing.pop(0)
+            # Discard the first entry, as it is for the next day.
+            listing.pop(0)
+            day_dir, file_mtime = listing.pop(0)
         except IndexError:
-            return None
-    return file_mtime
+            return None, None, []
+        
+    return day_dir, file_mtime, listing
 
 
 def list_images(volcano, count, stop_time: datetime = None):
@@ -116,10 +141,10 @@ def list_images(volcano, count, stop_time: datetime = None):
     next_time = None
     prev_time = None
 
-    day_dir, listing = get_img_times(img_dir, img_dir_time)
+    listing = get_img_times(img_dir, img_dir_time)
 
     while len(file_dates) < count:
-        file_mtime = get_prev(img_dir, img_dir_time, listing)
+        day_dir, file_mtime,listing = get_prev(img_dir, img_dir_time, listing)
         if file_mtime is None:
             # No previous day. Out of images.
             break  # No more files to be had
@@ -142,13 +167,30 @@ def list_images(volcano, count, stop_time: datetime = None):
         file_group = [os.path.basename(x) for x in glob.glob(glob_pattern)]
         file_dates.append(file_group)
 
-    if count == 1:
-        prev_time = get_prev(img_dir, img_dir_time, listing)
+    # if count == 1:
+        # day_dir, prev_time, listing = get_prev(img_dir, img_dir_time, listing)
+    # else:
+    
+    # if file_mtime is none, we ran out of files while navigating backward before we 
+    # even had as many as we wanted, so clearly no previous files are available.
+    if file_mtime is None:
+        prev_time = None
+        
     else:
-        try:
-            prev_time = prev_time_opts.pop()
-        except:
-            prev_time = None
+        # Get what would be the next file back if we kept going.
+        day_dir, prev_time, listing = get_prev(img_dir, img_dir_time, listing)
+            
+        # If there is no next file back, then leave prev_time as None.
+        # If there is, but we are only showing 1 image, then the next 
+        # file back is the "target" file for navigating back, and we 
+        # can just leave the prev_time value as-is.
+        if prev_time is not None and count > 1:
+            # if count>1, then we want to use the previously stored 
+            # "opt" value for prev_time.
+            try:
+                prev_time = prev_time_opts.pop()
+            except:
+                prev_time = None
 
     return {"files": file_dates, "prev": prev_time, 'next': next_time}
 

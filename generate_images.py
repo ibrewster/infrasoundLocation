@@ -53,7 +53,7 @@ class infrasound_location:
         print("End time set to:", self.ENDTIME)
         self.STARTTIME = start or self.ENDTIME - 10 * 60  # 10 minutes
 
-    def gen_volc_image(self, volc_name, volc_info):
+    def gen_volc_image(self, volc_name, volc_info, SAVE_DB = True):
         NETWORK = config.NETWORK
         SOURCE = config.SOURCE
         LOCATION = config.LOCATION
@@ -145,7 +145,7 @@ class infrasound_location:
         det_lat = numpy.asarray(y_max)
         det_values = props['peak_heights']
 
-        if len(det_values) > 0:
+        if len(det_values) > 0 and SAVE_DB:
             det_volc = [volc_name] * len(det_values)
             gc_x, gc_y, _, _ = utm.from_latlon(*reversed(S.grid_center))
             det_x, det_y, _, _ = utm.from_latlon(det_lat, det_lon)

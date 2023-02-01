@@ -177,6 +177,13 @@ function getImages(stop_time){
             $(`#${volc}Tab div.nav.next button`).attr('disabled',false);
             $('button.volcCurrent').attr('disabled',false);
         }
+        
+        if(data['prev']===null){
+            $(`#${volc}Tab div.nav.prev button`).attr('disabled',true);
+        }
+        else{
+            $(`#${volc}Tab div.nav.prev button`).attr('disabled',false);
+        }
 
         displayImages(data['files'],volc);
     })
