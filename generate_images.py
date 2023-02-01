@@ -180,6 +180,9 @@ class infrasound_location:
                                         plot_peak=True, xy_grid=X_RADIUS_NET, cont_int = 50,
                                         annot_int = 500)
 
+            fig_st.set_dpi(200)
+            fig_slice.set_dpi(200)
+
             # Adjust fig_slice to get rid of excess white space
             fig_slice.set_size_inches(8, 10.465)
             fig_slice.subplots_adjust(top = .945, bottom = .06, hspace = .2)
@@ -219,7 +222,7 @@ class infrasound_location:
 
             a = numpy.vstack((a1, a2))
 
-            dpi = fig_slice.get_dpi() * 1.5
+            dpi = 800
             height = fig_slice.get_figheight() + fig_st.get_figheight()
             fig_c, ax_c = plt.subplots(figsize=(8, height), dpi = dpi)
             fig_c.subplots_adjust(0, 0, 1, 1)
