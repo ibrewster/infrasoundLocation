@@ -85,35 +85,46 @@ function getDetections(){
         //kludge to always show current date for max value
         const currDate=new Date();
         const currDateStr=currDate.toISOString();
-        times.push(currDateStr);
-        values.push(-10000);
-        dist.push(-100);
 
         const dest=$('div.volcDetections:visible')[0]
         Plotly.newPlot(
             dest,
-            [{
-                x:times,
-                y:values,
-                z:dist,
-                mode:"markers",
-                marker:{
-                    color:dist,
-                    cmin:0,
-                    cmax:color_max,
-                    colorscale:[
-                        ['0','rgb(255,0,0)'],
-                        ['1.0','rgb(0,0,255)']
-                    ],
-                    colorbar:{
-                        title:{
-                            side:"right",
-                            text:"Distance to Center (M)"
+            [
+                {
+                    x:times,
+                    y:values,
+                    z:dist,
+                    mode:"markers",
+                    marker:{
+                        color:dist,
+                        cmin:0,
+                        cmax:color_max,
+                        colorscale:[
+                            //['-1','rgba(0,0,0,0)'],
+                            ['0','rgba(255,0,0,1)'],
+                            ['1.0','rgba(0,0,255,1)']
+                        ],
+                        colorbar:{
+                            title:{
+                                side:"right",
+                                text:"Distance to Center (M)"
+                            }
                         }
-                    }
+                    },
                 },
-            }],
+                {
+                    // this is the kludge dataset, so we can color it transparent.
+                    // just to make top-end be current date.
+                    x:[currDateStr],
+                    y:[.9],
+                    mode:"markers",
+                    marker:{
+                        color:'rgba(0,0,0,0)'
+                    }
+                }
+            ],
             {
+                showlegend: false,
                 margin: {
                     t: 5,
                     b:30,
