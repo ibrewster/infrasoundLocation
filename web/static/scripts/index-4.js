@@ -82,6 +82,13 @@ function getDetections(){
         [times,values,dist]=data['detections'];
         color_max=data['max_dist']
 
+        //kludge to always show current date for max value
+        const currDate=new Date();
+        const currDateStr=currDate.toISOString();
+        times.push(currDateStr);
+        values.push(-10000);
+        dist.push(-100);
+
         const dest=$('div.volcDetections:visible')[0]
         Plotly.newPlot(
             dest,
@@ -114,7 +121,8 @@ function getDetections(){
                 },
                 xaxis:{
                     tickangle: 0,
-                    gridcolor:"rgba(0,0,0,.25)"
+                    gridcolor:"rgba(0,0,0,.25)",
+
                 },
                 yaxis:{
                     range:[.75,1.075],
