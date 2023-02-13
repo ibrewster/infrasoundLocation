@@ -145,7 +145,7 @@ class infrasound_location:
         det_lat = numpy.asarray(y_max)
         det_values = props['peak_heights']
 
-        if len(det_values) > 0 and SAVE_DB:
+        if len(det_values) > 0 and SAVE_DB and nsta >= 3:
             det_volc = [volc_name] * len(det_values)
             gc_x, gc_y, _, _ = utm.from_latlon(*reversed(S.grid_center))
             det_x, det_y, _, _ = utm.from_latlon(det_lat, det_lon)
@@ -172,7 +172,10 @@ class infrasound_location:
         # fig_rec.axes[0].set_ylim(bottom=6)  # Start at this distance (km) from source
 
         if self.ISAVE:
+            from matplotlib import rcParams
             # %% (4) Plot
+            rcParams.update({'font.size': 10})
+
             fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,
                              remove_response=False, label_waveforms=True)
 
@@ -205,9 +208,8 @@ class infrasound_location:
             day = UTCDateTime.strftime(img_time, '%d')
             img_dir = os.path.join(self.SVDIR, volc_name, year, month, day)
             os.makedirs(img_dir, exist_ok = True)
-            from matplotlib import rcParams
 
-            rcParams.update({'font.size': 12})
+            rcParams.update({'font.size': 10})
 
             combined_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_combined.png')
 
@@ -230,6 +232,7 @@ class infrasound_location:
             ax_c.matshow(a)
 
             fig_c.savefig(combined_file, dpi = 200, pad_inches = 0.04, bbox_inches='tight')
+            plt.close('all')
 
             # wfs_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_wfs.png')
             # slice_file = os.path.join(img_dir, f'{volc_name}_{tmstr}_slice.png')
