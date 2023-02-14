@@ -2,6 +2,7 @@ import flask
 import glob
 import math
 import os
+import re
 
 import psycopg
 
@@ -59,8 +60,9 @@ def decompose_date(date: datetime):
     day = date.strftime("%d")
     return (year, month, day)
 
+
 def get_img_times_listing(base_dir, dir_date: datetime) -> set:
-    year,month,day = decompose_date(dir_date)
+    year, month, day = decompose_date(dir_date)
     img_dir = os.path.join(base_dir, year, month, day)
 
     try:
@@ -68,19 +70,20 @@ def get_img_times_listing(base_dir, dir_date: datetime) -> set:
         listing = {(img_dir, parse_file_time(x)) for x in os.scandir(img_dir)}
     except FileNotFoundError:
         listing = set()
-        
+
     return listing
-    
+
+
 def get_img_times(base_dir, dir_date: datetime):
     listing = get_img_times_listing(base_dir, dir_date)
-        
+
     # and *one* entry for the next day, so we don't get stuck
     dir_date += timedelta(days = 1)
 
     try:
         listing2 = sorted(get_img_times_listing(base_dir, dir_date),
-                       key = lambda x: x[1])[0]
-    
+                          key = lambda x: x[1])[0]
+
         listing.add(listing2)
     except IndexError:
         # No next day. No problem.
@@ -118,7 +121,7 @@ def get_prev(img_dir, img_dir_time, listing):
             day_dir, file_mtime = listing.pop(0)
         except IndexError:
             return None, None, []
-        
+
     return day_dir, file_mtime, listing
 
 
@@ -144,7 +147,7 @@ def list_images(volcano, count, stop_time: datetime = None):
     listing = get_img_times(img_dir, img_dir_time)
 
     while len(file_dates) < count:
-        day_dir, file_mtime,listing = get_prev(img_dir, img_dir_time, listing)
+        day_dir, file_mtime, listing = get_prev(img_dir, img_dir_time, listing)
         if file_mtime is None:
             # No previous day. Out of images.
             break  # No more files to be had
@@ -165,27 +168,33 @@ def list_images(volcano, count, stop_time: datetime = None):
         time_str = time_obj.strftime('%Y%m%d_%H%M')
         glob_pattern = f"{day_dir}/{volcano}_{time_str}_*.png"
         file_group = [os.path.basename(x) for x in glob.glob(glob_pattern)]
+        # See if we have a combined image. if so, only return that
+        for filename in file_group:
+            if filename.endswith('_combined.png'):
+                file_group = [filename, ]
+                break
+
         file_dates.append(file_group)
 
     # if count == 1:
         # day_dir, prev_time, listing = get_prev(img_dir, img_dir_time, listing)
     # else:
-    
-    # if file_mtime is none, we ran out of files while navigating backward before we 
+
+    # if file_mtime is none, we ran out of files while navigating backward before we
     # even had as many as we wanted, so clearly no previous files are available.
     if file_mtime is None:
         prev_time = None
-        
+
     else:
         # Get what would be the next file back if we kept going.
         day_dir, prev_time, listing = get_prev(img_dir, img_dir_time, listing)
-            
+
         # If there is no next file back, then leave prev_time as None.
-        # If there is, but we are only showing 1 image, then the next 
-        # file back is the "target" file for navigating back, and we 
+        # If there is, but we are only showing 1 image, then the next
+        # file back is the "target" file for navigating back, and we
         # can just leave the prev_time value as-is.
         if prev_time is not None and count > 1:
-            # if count>1, then we want to use the previously stored 
+            # if count>1, then we want to use the previously stored
             # "opt" value for prev_time.
             try:
                 prev_time = prev_time_opts.pop()
