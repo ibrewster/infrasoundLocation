@@ -8,17 +8,20 @@
     <script type="text/javascript" src="static/scripts/jquery-3.6.0.min.js" defer></script>
     <script type="text/javascript" src="static/scripts/jquery.datetimepicker.full.min.js" defer></script>
     <script type="text/javascript" src="static/scripts/plotly-2.16.1.min.js" defer></script>
-    <script type="text/javascript" src="static/scripts/index-5.js" defer></script>
+    <script type="text/javascript" src="static/scripts/index-6.js" defer></script>
 </head>
 <body>
+    <div style="display:none">
+        <a id='downloadLink' href='' download=''></a>
+    </div>
     <div id="volcs" class="tabs">
         {% for volc in volcs %}<button data-volc="{{volc}}">{{volc|capitalize}}</button>{%endfor%}
     </div>
     <div class=content>
         {% for volc in volcs %}
-        <div class="volcWrapper tabDiv" id="{{volc}}Tab" style="display:none;">
+        <div class="volcWrapper tabDiv" data-volc="{{volc}}" id="{{volc}}Tab" style="display:none;">
             <div class="volcDetections">
-
+                <div class="download"></div>
             </div>
             <div class=volcTop>
                 GoTo: <input type="text" id="endDateTime" class="datetime">

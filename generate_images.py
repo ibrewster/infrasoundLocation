@@ -174,6 +174,8 @@ class infrasound_location:
         if self.ISAVE:
             from matplotlib import rcParams
             # %% (4) Plot
+
+            # This should be the default, but go ahead and be explicit about it anyway just to be sure.
             rcParams.update({'font.size': 10})
 
             fig_st = plot_st(st, filt=[FREQ_MIN, FREQ_MAX], equal_scale=False,

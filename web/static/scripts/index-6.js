@@ -15,6 +15,10 @@ $(document).ready(function(){
         onClose:closeDebounce
     })
 
+    $(document).on('mouseenter','.volcDetections',showDownload);
+    $(document).on('mouseleave','.volcDetections',hideDownload);
+    $(document).on('click','.volcDetections .download',downloadCSV);
+
 
     $(window).resize(function(){
         const count=getImageCount();
@@ -27,6 +31,39 @@ $(document).ready(function(){
         }
     })
 })
+
+function downloadCSV(){
+    const data=$('.volcDetections:visible').get(0).data[0]
+    const x=data.x
+    const y=data.y
+    const z=data.z
+
+    let csvContent="data:text/csv;charset=utf-8,"
+    csvContent+="Date,Stack Amplitude,Distance (M)\r\n"
+    for(let i=0;i<x.length;i++){
+        csvContent+=`${x[i]},${y[i]},${z[i]}\r\n`
+    }
+
+    const encodedUri=encodeURI(csvContent);
+    const volc=$('.volcWrapper:visible').data('volc');
+    const file_name=`${volc} events ${x[0]} to ${x[x.length-1]}.csv`
+
+    $('#downloadLink')
+    .attr('download',file_name)
+    .attr('href',encodedUri)
+    .get(0)
+    .click()
+}
+
+function showDownload(){
+    const btn=$(this).find('.download')
+    btn.fadeIn();
+}
+
+function hideDownload(){
+    const btn=$(this).find('.download');
+    btn.fadeOut();
+}
 
 let endDateTimeVal="";
 function closeDebounce(){
@@ -196,7 +233,7 @@ function getImages(stop_time){
             $(`#${volc}Tab div.nav.next button`).attr('disabled',false);
             $('button.volcCurrent').attr('disabled',false);
         }
-        
+
         if(data['prev']===null){
             $(`#${volc}Tab div.nav.prev button`).attr('disabled',true);
         }
