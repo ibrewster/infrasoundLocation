@@ -168,6 +168,7 @@ def list_images(volcano, count, stop_time: datetime = None):
         time_str = time_obj.strftime('%Y%m%d_%H%M')
         glob_pattern = f"{day_dir}/{volcano}_{time_str}_*.png"
         file_group = [os.path.basename(x) for x in glob.glob(glob_pattern)]
+
         # See if we have a combined image. if so, only return that
         for filename in file_group:
             if filename.endswith('_combined.png'):
@@ -176,17 +177,13 @@ def list_images(volcano, count, stop_time: datetime = None):
 
         file_dates.append(file_group)
 
-    # if count == 1:
-        # day_dir, prev_time, listing = get_prev(img_dir, img_dir_time, listing)
-    # else:
-
     # if file_mtime is none, we ran out of files while navigating backward before we
     # even had as many as we wanted, so clearly no previous files are available.
     if file_mtime is None:
         prev_time = None
-
     else:
         # Get what would be the next file back if we kept going.
+        # Will return None for prev_time if there is no previous file
         day_dir, prev_time, listing = get_prev(img_dir, img_dir_time, listing)
 
         # If there is no next file back, then leave prev_time as None.
