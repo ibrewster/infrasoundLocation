@@ -153,7 +153,7 @@ class infrasound_location:
             # Distance to center in meters (a^2+b^2=c^2)
             det_dist = numpy.sqrt(numpy.square(det_x - gc_x) + numpy.square(det_y - gc_y))
 
-            db_data = list(zip(det_volc, det_values, det_times, det_dist, det_lon, det_lat))
+            db_data = list(zip(det_volc, det_values, det_times, det_dist, det_lon.tolist(), det_lat.tolist()))
 
             ##### DEBUG
             print("Saving detections to DB:", db_data)
