@@ -1,13 +1,15 @@
 [Unit]
-Description = Infrasound Location Plotting Service
+Description = Infrasound Location Plotting Web Service
 After = network.target
 
 [Service]
-ExecStart = /data/infrasoundLocation/bin/uwsgi -i /data/infrasoundLocation/Support/infrasoundlocation.ini
+ExecStart = /shared/apps/infrasoundlocation/ifrloc-env/bin/uwsgi -i /shared/apps/infrasoundlocation/infrasoundLocation/Support/infrasoundlocation.ini
 RuntimeDirectory = infrasound
 RuntimeDirectoryMode = 777
 Restart=on-failure
 RestartSec=15s
+User=www-data
+Group=www-data
 
 [Install]
 WantedBy = multi-user.target
